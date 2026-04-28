@@ -1515,6 +1515,12 @@ void packed_entry_data::pack_entry(
 }
 
 [[noreturn]] void frozen_panic() { DWARFS_PANIC("entry_storage is frozen"); }
+[[noreturn]] void mutable_panic() {
+  DWARFS_PANIC("entry_storage is not frozen");
+}
+[[noreturn]] void synchronized_panic() {
+  DWARFS_PANIC("not supported for synchronized entry_storage");
+}
 
 } // namespace
 
@@ -1828,7 +1834,7 @@ class entry_storage_ final : public entry_storage::entry_impl {
     } else {
       // If we ever need this, we can do a binary search here since frozen
       // entries are sorted by name.
-      DWARFS_PANIC("find_in_dir not (yet) supported for frozen entry_storage");
+      frozen_panic();
     }
 
     return {};
@@ -1838,8 +1844,7 @@ class entry_storage_ final : public entry_storage::entry_impl {
     TRACE_CALL;
 
     if constexpr (is_mutable) {
-      DWARFS_PANIC(
-          "entry_less_revpath is not supported for mutable entry_storage");
+      mutable_panic();
     } else {
 #ifdef DWARFS_HANDLE_NATIVE_PATHS
       if (shared_.native_path_component_count() > 0) {
@@ -1863,7 +1868,7 @@ class entry_storage_ final : public entry_storage::entry_impl {
     TRACE_CALL;
 
     if constexpr (is_mutable) {
-      DWARFS_PANIC("sorted path components can only be used after freezing");
+      mutable_panic();
     } else {
       return shared_.get_sorted_path_components();
     }
@@ -1873,7 +1878,7 @@ class entry_storage_ final : public entry_storage::entry_impl {
     TRACE_CALL;
 
     if constexpr (is_mutable) {
-      DWARFS_PANIC("path component index can only be used after freezing");
+      mutable_panic();
     } else {
       if (id == kRootId) {
         return 0;
@@ -1898,8 +1903,7 @@ class entry_storage_ final : public entry_storage::entry_impl {
     TRACE_CALL;
 
     if constexpr (is_mutable) {
-      DWARFS_PANIC(
-          "bulk compressed path components can only be stolen after freezing");
+      mutable_panic();
     } else {
       return shared_.steal_bulk_compressed_path_components();
     }
@@ -2008,8 +2012,7 @@ class entry_storage_ final : public entry_storage::entry_impl {
   void sort_file_id_vector(file_id_vector& fv) const override {
     TRACE_CALL;
     if constexpr (is_mutable) {
-      DWARFS_PANIC(
-          "sorting file_id_vector is not supported for mutable entry_storage");
+      mutable_panic();
     } else {
       // See comment in `entry_less_revpath` about ordering. In this case,
       // we only want deterministic ordering, so we don't care about the
@@ -2990,7 +2993,7 @@ class synchronized_entry_storage_ final : public entry_storage::entry_impl {
   void
   for_each_entry_in_dir(dir_id,
                         std::function<void(entry_id)> const&) const override {
-    DWARFS_PANIC("synchronized for_each_entry_in_dir is not supported");
+    synchronized_panic();
   }
 
   entry_id find_in_dir(dir_id id, std::string_view name) const override {
@@ -2998,29 +3001,29 @@ class synchronized_entry_storage_ final : public entry_storage::entry_impl {
   }
 
   bool entry_less_revpath(entry_id lhs, entry_id rhs) const override {
-    return impl_.lock()->entry_less_revpath(lhs, rhs);
+    synchronized_panic();
   }
 
   std::vector<std::string> get_sorted_path_components() const override {
-    return impl_.lock()->get_sorted_path_components();
+    synchronized_panic();
   }
 
   std::size_t get_path_component_index(entry_id id) const override {
-    return impl_.lock()->get_path_component_index(id);
+    synchronized_panic();
   }
 
   bool has_bulk_compressed_path_components() const override {
-    return impl_.lock()->has_bulk_compressed_path_components();
+    synchronized_panic();
   }
 
   dwarfs::internal::fsst_encoder::bulk_compression_result
   steal_bulk_compressed_path_components() override {
-    return impl_.lock()->steal_bulk_compressed_path_components();
+    synchronized_panic();
   }
 
   void update_global_entry_data(entry_id id,
                                 global_entry_data& data) const override {
-    impl_.lock()->update_global_entry_data(id, data);
+    synchronized_panic();
   }
 
   void
@@ -3028,7 +3031,7 @@ class synchronized_entry_storage_ final : public entry_storage::entry_impl {
              thrift::metadata::metadata::inodes_member_type::reference entry_v2,
              global_entry_data const& data,
              time_resolution_converter const& timeres) const override {
-    impl_.lock()->pack_entry(id, entry_v2, data, timeres);
+    synchronized_panic();
   }
 
   unique_inode_id get_unique_inode_id(entry_id id) const override {
@@ -3098,10 +3101,10 @@ class synchronized_entry_storage_ final : public entry_storage::entry_impl {
   }
 
   void sort_file_id_vector(file_id_vector& fv) const override {
-    impl_.lock()->sort_file_id_vector(fv);
+    synchronized_panic();
   }
 
-  void drop_file_hashes() override { impl_.lock()->drop_file_hashes(); }
+  void drop_file_hashes() override { synchronized_panic(); }
 
   std::unique_ptr<entry_impl> freeze(logger& lgr, progress& prog) override {
     return impl_.lock()->freeze(lgr, prog);
