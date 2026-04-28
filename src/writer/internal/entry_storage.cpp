@@ -3000,7 +3000,7 @@ class synchronized_entry_storage_ final : public entry_storage::entry_impl {
     return impl_.lock()->find_in_dir(id, name);
   }
 
-  bool entry_less_revpath(entry_id lhs, entry_id rhs) const override {
+  bool entry_less_revpath(entry_id, entry_id) const override {
     synchronized_panic();
   }
 
@@ -3008,7 +3008,7 @@ class synchronized_entry_storage_ final : public entry_storage::entry_impl {
     synchronized_panic();
   }
 
-  std::size_t get_path_component_index(entry_id id) const override {
+  std::size_t get_path_component_index(entry_id) const override {
     synchronized_panic();
   }
 
@@ -3021,16 +3021,14 @@ class synchronized_entry_storage_ final : public entry_storage::entry_impl {
     synchronized_panic();
   }
 
-  void update_global_entry_data(entry_id id,
-                                global_entry_data& data) const override {
+  void update_global_entry_data(entry_id, global_entry_data&) const override {
     synchronized_panic();
   }
 
-  void
-  pack_entry(entry_id id,
-             thrift::metadata::metadata::inodes_member_type::reference entry_v2,
-             global_entry_data const& data,
-             time_resolution_converter const& timeres) const override {
+  void pack_entry(entry_id,
+                  thrift::metadata::metadata::inodes_member_type::reference,
+                  global_entry_data const&,
+                  time_resolution_converter const&) const override {
     synchronized_panic();
   }
 
@@ -3100,7 +3098,7 @@ class synchronized_entry_storage_ final : public entry_storage::entry_impl {
     impl_.lock()->dump_events(os);
   }
 
-  void sort_file_id_vector(file_id_vector& fv) const override {
+  void sort_file_id_vector(file_id_vector&) const override {
     synchronized_panic();
   }
 
