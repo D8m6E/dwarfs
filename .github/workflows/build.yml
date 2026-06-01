@@ -40,7 +40,6 @@ permissions:
 jobs:
   windows:
     runs-on:
-      - self-hosted
       - Windows
 
     strategy:
